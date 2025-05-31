@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 const mockEmails = [
   { id: 1, from: "alice@example.com", date: "2025-05-29", subject: "Meeting Update", body: "Let's reschedule our meeting to next week." },
@@ -13,28 +13,47 @@ function App() {
   const [selectedEmailIdx, setSelectedEmailIdx] = useState(0);
   const [activeTab, setActiveTab] = useState("Original");
   const [replyText, setReplyText] = useState("");
+  const carouselRef = useRef(null);
 
   const email = mockEmails[selectedEmailIdx];
+
+  // Scroll to the selected email when arrows are clicked
+  const handleArrowClick = (direction) => {
+    let newIdx = selectedEmailIdx + direction;
+    newIdx = Math.max(0, Math.min(mockEmails.length - 1, newIdx));
+    setSelectedEmailIdx(newIdx);
+
+    // Scroll the selected item into view
+    setTimeout(() => {
+      const carousel = carouselRef.current;
+      if (carousel) {
+        const selected = carousel.querySelector('.carousel-item.selected');
+        if (selected) {
+          selected.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
+    }, 0);
+  };
 
   return (
     <div className="App">
       <header className="mail-header">
-        <h2>Mail</h2>
+        <h2>Email Assistant</h2>
       </header>
       {/* Email carousel */}
       <div className="carousel-container">
         <button
           className="carousel-arrow"
-          onClick={() => setSelectedEmailIdx(Math.max(0, selectedEmailIdx - 1))}
+          onClick={() => handleArrowClick(-1)}
           disabled={selectedEmailIdx === 0}
           aria-label="Previous"
         >
           {/* Left Arrow SVG */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M15 6l-6 6 6 6" stroke="#007bff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+            <path d="M15 6l-6 6 6 6" stroke="#007bff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <div className="carousel-list">
+        <div className="carousel-list" ref={carouselRef}>
           {mockEmails.map((em, idx) => (
             <div
               key={em.id}
@@ -48,13 +67,13 @@ function App() {
         </div>
         <button
           className="carousel-arrow"
-          onClick={() => setSelectedEmailIdx(Math.min(mockEmails.length - 1, selectedEmailIdx + 1))}
+          onClick={() => handleArrowClick(1)}
           disabled={selectedEmailIdx === mockEmails.length - 1}
           aria-label="Next"
         >
           {/* Right Arrow SVG */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M9 6l6 6-6 6" stroke="#007bff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+            <path d="M9 6l6 6-6 6" stroke="#007bff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
       </div>
@@ -84,7 +103,6 @@ function App() {
           <div className="ai-summary">
             <strong>AI Summary:</strong>
             <div className="ai-summary-text">
-              {/* Placeholder summary */}
               This is a summary of the email content.
             </div>
           </div>
@@ -93,7 +111,6 @@ function App() {
           <div className="ai-reply">
             <strong>AI Response:</strong>
             <div className="ai-reply-text">
-              {/* Placeholder response */}
               This is a suggested reply to the email.
             </div>
             <textarea
