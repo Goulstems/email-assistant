@@ -109,7 +109,12 @@
   min-width: 0;
   overflow-x: auto;
   white-space: nowrap;
-  padding: 0 3.2rem; /* Increase padding to match arrow width */
+  padding: 0 3.2rem;
+  scrollbar-color: #ffe3c2 #fff; /* Optional: custom scrollbar color */
+  scrollbar-width: thin;         /* Optional: thinner scrollbar */
+  /* Add a slight offset for the scrollbar */
+  margin-bottom: -2px;           /* Moves the scrollbar 2px lower */
+  padding-bottom: 6px;           /* Adds space below cards for the scrollbar */
 }
 
 .carousel-item {
