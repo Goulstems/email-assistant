@@ -1,13 +1,10 @@
 .App {
-  max-width: 600px;
-  margin: .5rem auto;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  max-width: 700px;
+  margin: 40px auto;
   background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 16px rgba(255, 140, 0, 0.07);
-  overflow: hidden;
-  /* Remove the border so no line appears above the header */
-  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+  padding: 32px 24px 24px 24px;
 }
 
 .App-logo {
@@ -47,14 +44,8 @@
 
 /* Header */
 .mail-header {
-  padding: 0.3rem 0.5rem;
-  border-bottom: 2px solid #ff8800; /* Thicker, more visible orange border */
-  background: #fff;
-  color: #222;
-  letter-spacing: 0.5px;
   text-align: center;
-  margin-bottom: 0.5rem;   /* Add a little space below the header */
-  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.06); /* Subtle shadow for separation */
+  margin-bottom: 24px;
 }
 
 .mail-header h2 {
@@ -67,79 +58,56 @@
 .carousel-container {
   display: flex;
   align-items: center;
-  padding: 0.5rem 0rem;
-  background: #fff;
-  border-bottom: 1px solid #f3ede7;
-  position: relative;
+  margin-bottom: 18px;
 }
 
 .carousel-arrow {
-  flex-shrink: 0;
-  background: #f9f5f1;
+  background: none;
   border: none;
-  color: #ff8800;
-  padding: 0.1rem 0.2rem;
-  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 4px rgba(255, 140, 0, 0.04);
-  /* Move arrows to the edges */
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
+  padding: 0 8px;
+  transition: opacity 0.2s;
+  opacity: 0.8;
 }
 
-.carousel-arrow[aria-label="Previous"] {
-  left: 0.2rem;
-}
-
-.carousel-arrow[aria-label="Next"] {
-  right: 0.2rem;
+.carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .carousel-list {
   display: flex;
-  gap: 0.5rem;
-  flex: 1 1 0;
-  justify-content: flex-start;
-  min-width: 0;
   overflow-x: auto;
-  white-space: nowrap;
-  padding: 0 3.2rem;
-  scrollbar-color: #ffe3c2 #fff; /* Optional: custom scrollbar color */
-  scrollbar-width: thin;         /* Optional: thinner scrollbar */
-  /* Add a slight offset for the scrollbar */
-  margin-bottom: -2px;           /* Moves the scrollbar 2px lower */
-  padding-bottom: 6px;           /* Adds space below cards for the scrollbar */
+  scroll-behavior: smooth;
+  gap: 12px;
+  padding: 8px 0;
+  flex: 1;
 }
 
 .carousel-item {
-  flex: 0 0 auto; /* Prevent shrinking and keep items side by side */
-  min-width: 120px;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border: 1px solid #f3ede7;
+  min-width: 150px;
+  background: #f3f3f3;
   border-radius: 8px;
-  padding: 0.3rem 0.7rem;      /* Smaller vertical padding */
-  background: #fff;
-  cursor: default;             /* Not selectable */
-  transition: border 0.2s, background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 1px 3px rgba(255, 140, 0, 0.03);
+  padding: 12px 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  user-select: none;           /* Prevent text selection */
-  pointer-events: auto;        /* Prevent click/select */
+  align-items: flex-start;
+  opacity: 0;
+  animation: fadeIn 0.4s forwards;
 }
 .carousel-item.selected {
   border: 1px solid #f3ede7;   /* Remove highlight for selected */
   background: #fff;
   box-shadow: 0 1px 3px rgba(255, 140, 0, 0.03);
+}
+.carousel-item:nth-child(n) {
+  animation-delay: calc(0.08s * var(--i));
+}
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
 }
 .carousel-from, .carousel-date {
   overflow: hidden;
@@ -148,20 +116,17 @@
 }
 .carousel-from {
   font-weight: bold;
-  font-size: .95em;
-  color: #222;
+  margin-bottom: 4px;
+  color: #009688;
 }
 .carousel-date {
-  font-size: 0.9em;
+  font-size: 0.95em;
   color: #888;
+  margin-bottom: 4px;
 }
 .carousel-subject {
-  font-size: 0.96em;
-  color: #1e8fcc;           /* Make subject less prominent */
-  font-weight: 400;      /* Normal weight */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 1em;
+  color: #333;
 }
 
 /* Tabs */
@@ -316,33 +281,29 @@
 
 /* Status Bar */
 .status-bar {
-  margin: 0.25rem 0 0.5rem 0;
-  padding: 0.35rem 1rem;
-  background: #fff8f2;
-  border: 1px solid #ffe3c2;
-  border-radius: 6px;
-  font-size: 0.98rem;
-  color: #b85c00;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  background: #f7f7f7;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 1.1em;
+}
+
+.status-text {
+  font-weight: bold;
 }
 
 /* Config Card */
 .config-card {
-  background: #fff;
-  border: 1px solid #f3ede7;
+  background: #f9f9f9;
   border-radius: 10px;
-  padding: 0.75rem 1rem;
-  margin: 0 auto 1rem auto;
-  max-width: 350px;
-  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.04);
+  padding: 18px 20px 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 .config-title {
-  font-weight: 600;
-  color: #b85c00;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-size: 1.1em;
 }
 .config-fields {
   display: flex;
@@ -351,73 +312,59 @@
   margin-bottom: 0.5rem;
 }
 .config-fields label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.95em;
-  color: #222;
+  display: block;
+  margin-bottom: 10px;
 }
 .config-input {
-  margin-top: 0.15rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 5px;
-  border: 1px solid #f3ede7;
-  font-size: 0.98em;
-  background: #fff8f2;
-  color: #222;
+  margin-left: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
 .confirm-btn {
+  margin-top: 10px;
   background: #ff8800;
   color: #fff;
   border: none;
   border-radius: 6px;
-  padding: 0.45rem 1.1rem;
-  font-size: 0.98em;
-  font-weight: 600;
+  padding: 8px 18px;
+  font-size: 1em;
   cursor: pointer;
   transition: background 0.2s;
 }
 .confirm-btn:disabled {
-  background: #ffd7b3;
-  color: #fff;
+  background: #ccc;
   cursor: not-allowed;
 }
 
 /* Start Assistant */
 .start-row {
-  display: flex;
-  justify-content: center;
-  margin: 0.8rem 0 0.5rem 0;
+  text-align: center;
+  margin: 24px 0 16px 0;
 }
 .start-btn {
-  background: linear-gradient(90deg, #ff8800 60%, #ffb347 100%);
+  background: #ffb366;      /* Dull orange */
   color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 0.7rem 1.5rem;
-  font-size: 1.05em;
-  font-weight: 700;
-  letter-spacing: 1px;
+  border-radius: 6px;
+  padding: 12px 32px;
+  font-size: 1.1em;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.08);
   transition: background 0.2s;
 }
-.start-btn:disabled {
-  background: #ffd7b3;
+.start-btn:hover,
+.start-btn.active,
+.start-btn:active {
+  background: #ff8800;      /* Vivid orange on hover/active */
   color: #fff;
-  cursor: not-allowed;
 }
 
 /* Log label */
 .log-label {
-  margin: 2rem 0 0.5rem 0;
-  text-align: left;
-  font-weight: 600;
-  color: #b85c00;
-  font-size: 1.1rem;
-  padding-left: 1rem;
-  padding-top: 1rem;
-  border-top: 2px solid #ffe3c2; /* Separator above the log section */
-  background: #fff;
+  margin-top: 32px;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 8px;
 }
 
 /* Log carousel at bottom */
@@ -430,17 +377,102 @@
 
 /* Label under the log */
 .draft-count-label {
-  display: block;
-  text-align: left;
-  color: #888;
-  font-size: 0.98rem;
-  font-weight: 400;
-  margin: 0.5rem 0 0 1.2rem;
-  letter-spacing: 0.2px;
-  background: none;
-  padding-left: 0;
+  text-align: center;
+  margin-top: 18px;
+  font-size: 1.1em;
+  color: #444;
 }
 .draft-count-label strong {
   color: #ff8800;
   font-weight: 600;
+}
+
+/* Login Styles */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+  padding: 40px 32px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mail-header {
+  margin-bottom: 32px;
+  font-size: 2em;
+  color: #333;
+}
+
+.start-btn {
+  background: #ffb366;      /* Dull orange */
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 32px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.start-btn:hover,
+.start-btn.active,
+.start-btn:active {
+  background: #ff8800;      /* Vivid orange on hover/active */
+  color: #fff;
+}
+
+/* Back button styles */
+.back-row {
+  text-align: left;
+  margin-bottom: 12px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #ff8800;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+  margin-left: 0.2em;
+  transition: color 0.2s;
+}
+
+.back-btn:hover {
+  color: #e67300;
+  text-decoration: underline;
+}
+
+/* Loading Ellipsis */
+.loading-ellipsis {
+  text-align: center;
+  font-size: 1.2em;
+  color: #ff8800;
+  margin-top: 10px;
+  letter-spacing: 2px;
+  min-height: 1.5em;
+}
+
+.loading-ellipsis .dot {
+  opacity: 0.2;
+  animation: blink 1.2s infinite;
+}
+
+.loading-ellipsis .dot.one { animation-delay: 0s; }
+.loading-ellipsis .dot.two { animation-delay: 0.2s; }
+.loading-ellipsis .dot.three { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
 }
