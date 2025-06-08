@@ -261,7 +261,7 @@ function App() {
       </div>
 
       <div className="draft-count-label">
-         Recently Unread: <strong>{logEmails.length}</strong>
+         Recently Unread: <strong>{visibleCount}</strong>
       </div>
     </div>
   );

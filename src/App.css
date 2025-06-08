@@ -109,10 +109,17 @@
     opacity: 1;
   }
 }
-.carousel-from, .carousel-date {
+/* Example for a card or text container */
+.carousel-item,
+.carousel-from,
+.carousel-date,
+.carousel-subject {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Optionally, set a max-width or width */
+  max-width: 100%;
+  display: block;
 }
 .carousel-from {
   font-weight: bold;
