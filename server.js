@@ -37,8 +37,15 @@ app.get('/api/auth/google/callback', async (req, res) => {
   console.log('OAuth code received:', code); // Log the code
   const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
   try {
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Tokens = tokens; // Store securely in production!
+    // Replace this in your callback route for a test
+    const tokenRes = await axios.post('https://oauth2.googleapis.com/token', {
+      code,
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      redirect_uri: REDIRECT_URI,
+      grant_type: 'authorization_code'
+    });
+    oauth2Tokens = tokenRes.data;
     res.redirect('http://localhost:3000?authed=1');
   } catch (err) {
     // Log the full error response from Google

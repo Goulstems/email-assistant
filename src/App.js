@@ -1,17 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import './App.css';
 
-const CLIENT_ID = "686439120217-83sbckt02u93occvv4fc7o6co323f3bv.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
-
 const STATUSES = [
   "Inactive",
   "Active"
 ];
 
 function App() {
-  const [tokenClient, setTokenClient] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
   const [status, setStatus] = useState(STATUSES[0]);
   const [assistantActive, setAssistantActive] = useState(false);
   const [logEmails, setLogEmails] = useState([]);
@@ -21,48 +16,7 @@ function App() {
   const scrollInterval = useRef(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Google Identity Services logic
-  useEffect(() => {
-    const initializeGsi = () => {
-      if (window.google && !tokenClient) {
-        const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          callback: (response) => {
-            if (response.access_token) {
-              setAccessToken(response.access_token);
-              setIsAuthenticated(true);
-              loadGapiClient(response.access_token);
-            }
-          },
-        });
-        setTokenClient(client);
-      }
-    };
-
-    if (window.google) {
-      initializeGsi();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google) {
-          initializeGsi();
-          clearInterval(interval);
-        }
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  }, [tokenClient]);
-
-  const loadGapiClient = (accessToken) => {
-    window.gapi.load("client", () => {
-      window.gapi.client.setToken({ access_token: accessToken });
-      window.gapi.client.load("gmail", "v1", () => {
-        fetchUnreadEmails();
-      });
-    });
-  };
-
-  // Fetch unread emails from Gmail and update logEmails
+  // Fetch unread emails from backend
   const fetchUnreadEmails = async () => {
     try {
       const res = await fetch('http://localhost:4000/api/gmail/unread');
@@ -79,7 +33,6 @@ function App() {
   };
 
   const handleLogout = () => {
-    setAccessToken(null);
     setAssistantActive(false);
     setStatus(STATUSES[0]);
     setLogEmails([]);
@@ -153,7 +106,6 @@ function App() {
     if (window.location.search.includes('authed=1')) {
       setIsAuthenticated(true);
       fetchUnreadEmails();
-      // Optionally, clean up the URL
       window.history.replaceState({}, document.title, "/");
     }
   }, []);
