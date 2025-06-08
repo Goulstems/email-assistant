@@ -19,6 +19,7 @@ function App() {
   const carouselRef = useRef(null);
   const [selectedLogIdx, setSelectedLogIdx] = useState(0);
   const scrollInterval = useRef(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Google Identity Services logic
   useEffect(() => {
@@ -30,6 +31,7 @@ function App() {
           callback: (response) => {
             if (response.access_token) {
               setAccessToken(response.access_token);
+              setIsAuthenticated(true);
               loadGapiClient(response.access_token);
             }
           },
@@ -63,52 +65,9 @@ function App() {
   // Fetch unread emails from Gmail and update logEmails
   const fetchUnreadEmails = async () => {
     try {
-      const res = await window.gapi.client.gmail.users.messages.list({
-        userId: "me",
-        q: "in:inbox is:unread",
-        maxResults: 10,
-      });
-      const messages = res.result.messages || [];
-      if (messages.length === 0) {
-        setLogEmails([]);
-        return;
-      }
-      // Fetch details for each message
-      const emailPromises = messages.map(async (msg) => {
-        const msgData = await window.gapi.client.gmail.users.messages.get({
-          userId: "me",
-          id: msg.id,
-        });
-        const headers = msgData.result.payload.headers;
-        const subject = headers.find(h => h.name === "Subject")?.value || "(No Subject)";
-        // Extract only the sender's name (not email)
-        const fromHeader = headers.find(h => h.name === "From")?.value || "(Unknown Sender)";
-        let from = fromHeader;
-        const match = fromHeader.match(/^(.*?)\s*<.*?>$/);
-        if (match && match[1]) {
-          from = match[1].replace(/"/g, '').trim();
-        }
-        const dateRaw = headers.find(h => h.name === "Date")?.value || "";
-        let date = "";
-        if (dateRaw) {
-          const localDate = new Date(dateRaw);
-          date = localDate.toLocaleString(undefined, {
-            year: "numeric",
-            month: "numeric",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          });
-        }
-        return {
-          id: msg.id,
-          from,
-          subject,
-          date,
-        };
-      });
-      const emails = await Promise.all(emailPromises);
+      const res = await fetch('http://localhost:4000/api/gmail/unread');
+      if (!res.ok) throw new Error('Not authenticated or error fetching emails');
+      const emails = await res.json();
       setLogEmails(emails);
     } catch (err) {
       setLogEmails([]);
@@ -116,11 +75,7 @@ function App() {
   };
 
   const handleLogin = () => {
-    if (tokenClient) {
-      tokenClient.requestAccessToken();
-    } else {
-      alert("Google API not loaded yet, please wait.");
-    }
+    window.location.href = "http://localhost:4000/api/auth/google";
   };
 
   const handleLogout = () => {
@@ -129,6 +84,7 @@ function App() {
     setStatus(STATUSES[0]);
     setLogEmails([]);
     setVisibleCount(0);
+    setIsAuthenticated(false);
   };
 
   const handleStart = () => {
@@ -192,8 +148,18 @@ function App() {
     return () => clearInterval(interval);
   }, [logEmails]);
 
+  // Check for ?authed=1 in the URL
+  useEffect(() => {
+    if (window.location.search.includes('authed=1')) {
+      setIsAuthenticated(true);
+      fetchUnreadEmails();
+      // Optionally, clean up the URL
+      window.history.replaceState({}, document.title, "/");
+    }
+  }, []);
+
   // --- CONDITIONAL RENDERING ---
-  if (!accessToken) {
+  if (!isAuthenticated) {
     // Show login options until authenticated
     return (
       <div className="login-container">
@@ -283,6 +249,7 @@ function App() {
           onClick={handleStart}
         >
           {assistantActive ? "Stop Assistant" : "Start Assistant"}
+          <div className="start-btn-filter"></div>
         </button>
       </div>
 
