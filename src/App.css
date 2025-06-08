@@ -390,26 +390,33 @@
 /* Login Styles */
 .login-container {
   min-height: 100vh;
+  background: #f6f7fb;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
 }
 
+/* The login card itself */
 .login-card {
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.10);
-  padding: 40px 32px 32px 32px;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(60,60,120,0.10), 0 1.5px 6px rgba(60,60,120,0.08);
+  padding: 38px 32px 32px 32px;
+  max-width: 370px;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  margin: 32px 0;
 }
 
 .mail-header {
-  margin-bottom: 32px;
-  font-size: 2em;
-  color: #333;
+  font-size: 2.1em;
+  font-weight: 700;
+  color: #232946;
+  text-align: center;
+  margin-bottom: 28px;
+  letter-spacing: -1px;
 }
 
 .start-btn {
@@ -475,4 +482,117 @@
 @keyframes blink {
   0%, 80%, 100% { opacity: 0.2; }
   40% { opacity: 1; }
+}
+
+.login-card .start-btn {
+  width: 100%;
+  min-width: 240px;
+  max-width: 320px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: flex-start;
+  font-size: 1.08em;
+  font-weight: 500;
+  padding: 0 20px;
+  margin: 0 auto 12px auto;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.login-card .btn-logo {
+  width: 26px;
+  height: 26px;
+  background: #fff;
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.login-card .google-btn {
+  background: #fff;
+  color: #444;
+  border: 1px solid #ddd;
+}
+.login-card .google-btn:hover {
+  background: #f5f5f5;
+}
+
+.login-card .ms-btn {
+  background: #2F2F7A;
+  color: #fff;
+}
+.login-card .ms-btn:hover {
+  background: #4F4FBF;
+}
+
+.login-card .yahoo-btn {
+  background: #6001D2;
+  color: #fff;
+}
+.login-card .yahoo-btn:hover {
+  background: #8B2EFF;
+}
+
+.login-card .imap-btn {
+  background: #888;
+  color: #fff;
+}
+.login-card .imap-btn:hover {
+  background: #555;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0 10px 0;
+  color: #aaa;
+  font-size: 1em;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #eee;
+  margin: 0 8px;
+}
+
+/* Overlay for disabled/TODO buttons */
+.todo-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30, 30, 30, 0.5); /* semi-transparent by default */
+  color: transparent;                /* Hide text initially */
+  font-weight: 700;
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  opacity: 1;                        /* Always visible */
+  pointer-events: none;
+  transition: background 0.18s, color 0.18s;
+  z-index: 2;
+}
+
+.login-card .todo-parent {
+  position: relative;
+  width: 100%;
+  min-width: 240px;
+  max-width: 320px;
+  height: 48px;
+  margin: 0 auto 12px auto;
+  display: flex;
+}
+
+.login-card .todo-parent:hover .todo-overlay {
+  background: rgba(30, 30, 30, 0.75); /* darker on hover */
+  color: #fff;                        /* show TODO text */
+  pointer-events: all;
 }
