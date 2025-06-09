@@ -15,6 +15,13 @@ function App() {
   const [selectedLogIdx, setSelectedLogIdx] = useState(0);
   const scrollInterval = useRef(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedLLM, setSelectedLLM] = useState("chatgpt");
+  const [showLLMModal, setShowLLMModal] = useState(false);
+  const [customLLM, setCustomLLM] = useState({
+    name: "",
+    endpoint: "",
+    apiKey: ""
+  });
 
   // Fetch unread emails from backend
   const fetchUnreadEmails = async () => {
@@ -110,6 +117,19 @@ function App() {
     }
   }, []);
 
+  const handleLLMRequest = async (userPrompt) => {
+    const res = await fetch('http://localhost:4000/api/llm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: userPrompt,
+        llm: selectedLLM // always use the current value
+      })
+    });
+    const data = await res.json();
+    // Use data.response
+  };
+
   // --- CONDITIONAL RENDERING ---
   if (!isAuthenticated) {
     // Show login options until authenticated
@@ -157,7 +177,7 @@ function App() {
               style={{ pointerEvents: "none" }}
             >
               <img className="btn-logo" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Mail_%28iOS%29.svg" alt="IMAP/SMTP" />
-              Use IMAP/SMTP Login
+              Sign In with IMAP/SMTP
             </button>
             <div className="todo-overlay">TODO</div>
           </div>
@@ -192,6 +212,34 @@ function App() {
         >
           {status}
         </span>
+      </div>
+
+      {/* LLM Selector */}
+      <div className="llm-selector">
+        <label htmlFor="llm-select" style={{ fontWeight: "bold", marginRight: 8 }}>LLM:</label>
+        <button
+          className={`llm-btn${selectedLLM === "chatgpt" ? " selected" : ""}`}
+          onClick={() => setSelectedLLM("chatgpt")}
+          type="button"
+          title="ChatGPT"
+          disabled={assistantActive}
+        >
+          <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png" alt="ChatGPT" width={24} height={24} />
+          ChatGPT
+        </button>
+        <button
+          className={`llm-btn${selectedLLM === "other" ? " selected" : ""}`}
+          onClick={() => {
+            setSelectedLLM("other");
+            setShowLLMModal(true);
+          }}
+          type="button"
+          title="Other LLM"
+          style={{ marginLeft: 8 }}
+        >
+          <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4a1.png" alt="Other LLM" width={24} height={24} />
+          Other
+        </button>
       </div>
 
       {/* Start Assistant Button */}
@@ -263,6 +311,45 @@ function App() {
       <div className="draft-count-label">
          Recently Unread: <strong>{visibleCount}</strong>
       </div>
+
+      {showLLMModal && (
+        <div className="llm-modal-backdrop">
+          <div className="llm-modal">
+            <h3>Configure Custom LLM</h3>
+            <label>
+              Name:
+              <input
+                type="text"
+                value={customLLM.name}
+                onChange={e => setCustomLLM({ ...customLLM, name: e.target.value })}
+              />
+            </label>
+            <label>
+              API Endpoint:
+              <input
+                type="text"
+                value={customLLM.endpoint}
+                onChange={e => setCustomLLM({ ...customLLM, endpoint: e.target.value })}
+              />
+            </label>
+            <label>
+              API Key:
+              <input
+                type="text"
+                value={customLLM.apiKey}
+                onChange={e => setCustomLLM({ ...customLLM, apiKey: e.target.value })}
+              />
+            </label>
+            <div style={{ marginTop: 12 }}>
+              <button
+                onClick={() => setShowLLMModal(false)}
+                style={{ marginRight: 8 }}
+              >Save</button>
+              <button onClick={() => setShowLLMModal(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
