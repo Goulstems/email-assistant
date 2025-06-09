@@ -47,13 +47,28 @@ function App() {
     setIsAuthenticated(false);
   };
 
-  const handleStart = () => {
-    if (!assistantActive) {
-      setStatus(STATUSES[1]);
-      setAssistantActive(true);
-    } else {
-      setStatus(STATUSES[0]);
-      setAssistantActive(false);
+  const handleStart = async () => {
+    setAssistantActive(true);
+    setStatus("Active");
+
+    // Get the most recent unread email (first in logEmails)
+    const mostRecent = logEmails[0];
+    if (!mostRecent) {
+      console.log("No unread emails to process.");
+      return;
+    }
+
+    // Send to backend LLM endpoint
+    try {
+      const res = await fetch('http://localhost:4000/api/llm/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: mostRecent })
+      });
+      const data = await res.json();
+      console.log("LLM Response:", data);
+    } catch (err) {
+      console.error("LLM request failed:", err);
     }
   };
 

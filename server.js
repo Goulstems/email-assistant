@@ -69,12 +69,23 @@ app.get('/api/gmail/unread', async (req, res) => {
   const messages = messagesRes.data.messages || [];
   const emails = [];
   for (const msg of messages) {
-    const msgData = await gmail.users.messages.get({ userId: 'me', id: msg.id });
+    const msgData = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
     const headers = msgData.data.payload.headers;
     const subject = headers.find(h => h.name === "Subject")?.value || "(No Subject)";
     const from = headers.find(h => h.name === "From")?.value || "(Unknown Sender)";
     const date = headers.find(h => h.name === "Date")?.value || "";
-    emails.push({ id: msg.id, from, subject, date });
+
+    // Extract plain text body
+    let body = "";
+    const parts = msgData.data.payload.parts || [];
+    for (const part of parts) {
+      if (part.mimeType === "text/plain" && part.body && part.body.data) {
+        body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+        break;
+      }
+    }
+
+    emails.push({ id: msg.id, from, subject, date, body });
   }
   res.json(emails);
 });
@@ -109,8 +120,15 @@ app.post('/api/llm/reply', async (req, res) => {
       body: response.data.choices[0].message.content.trim()
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("OpenAI error:", err.response?.data || err.message, err.response?.status || '');
+    res.status(500).json({ error: err.response?.data?.error?.message || err.message });
   }
+});
+
+app.post('/api/llm', (req, res) => {
+  const { prompt, llm, email } = req.body;
+  // Simulate LLM response
+  res.json({ response: `Draft reply for: "${prompt}" (LLM: ${llm})` });
 });
 
 const PORT = process.env.PORT || 4000;
