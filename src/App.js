@@ -22,6 +22,14 @@ function App() {
     endpoint: "",
     apiKey: ""
   });
+  // Use processingId instead of processingIdx
+  const [processingId, setProcessingId] = useState(null);
+  const assistantActiveRef = useRef(assistantActive);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    assistantActiveRef.current = assistantActive;
+  }, [assistantActive]);
 
   // Fetch unread emails from backend
   const fetchUnreadEmails = async () => {
@@ -47,29 +55,66 @@ function App() {
     setIsAuthenticated(false);
   };
 
+  // --- MAIN LOGIC: Start/Stop Assistant ---
   const handleStart = async () => {
-    setAssistantActive(true);
-    setStatus("Active");
+    console.log("handleStart called, assistantActive:", assistantActive);
 
-    // Get the most recent unread email (first in logEmails)
-    const mostRecent = logEmails[0];
-    if (!mostRecent) {
-      console.log("No unread emails to process.");
+    // Toggle assistantActive state
+    if (assistantActive) {
+      setAssistantActive(false);
+      setStatus("Inactive");
       return;
     }
 
-    // Send to backend LLM endpoint
-    try {
-      const res = await fetch('http://localhost:4000/api/llm/reply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: mostRecent })
-      });
-      const data = await res.json();
-      console.log("LLM Response:", data);
-    } catch (err) {
-      console.error("LLM request failed:", err);
+    setAssistantActive(true);
+    setStatus("Active");
+
+    // Let React update the UI before starting the loop!
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // Work on a copy to avoid index issues
+    let emailsToProcess = [...logEmails];
+    for (let i = 0; i < emailsToProcess.length; i++) {
+      if (!assistantActiveRef.current) break;
+
+      const email = emailsToProcess[i];
+      setProcessingId(email.id);
+
+      let endpoint = "/api/llm/reply";
+      if (selectedLLM === "huggingface") endpoint = "/api/llm/reply-hf";
+
+      try {
+        const res = await fetch(`http://localhost:4000${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+
+        await fetch('http://localhost:4000/api/gmail/draft-and-mark-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            emailId: email.id,
+            reply: data.body,
+            subject: data.subject
+          })
+        });
+
+        // Animate/fade out
+        await new Promise(resolve => setTimeout(resolve, 800)); // for animation
+
+        setLogEmails(prev => prev.filter(e => e.id !== email.id));
+        setVisibleCount(prev => Math.max(0, prev - 1));
+      } catch (err) {
+        console.error("Processing failed:", err);
+      }
+      setProcessingId(null); // Clear after removal
     }
+
+    setProcessingId(null);
+    setAssistantActive(false);
+    setStatus("Inactive");
   };
 
   const startScroll = (direction) => {
@@ -107,20 +152,9 @@ function App() {
     return () => carousel.removeEventListener('wheel', onWheel);
   }, []);
 
-  // Animate emails loading one by one
+  // Always show all loaded emails, no animation
   useEffect(() => {
-    if (logEmails.length === 0) {
-      setVisibleCount(0);
-      return;
-    }
-    setVisibleCount(0);
-    let i = 0;
-    const interval = setInterval(() => {
-      i++;
-      setVisibleCount(i);
-      if (i >= logEmails.length) clearInterval(interval);
-    }, 350); // 350ms per email
-    return () => clearInterval(interval);
+    setVisibleCount(logEmails.length);
   }, [logEmails]);
 
   // Check for ?authed=1 in the URL
@@ -255,6 +289,16 @@ function App() {
           <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4a1.png" alt="Other LLM" width={24} height={24} />
           Other
         </button>
+        <button
+          className={`llm-btn${selectedLLM === "huggingface" ? " selected" : ""}`}
+          onClick={() => setSelectedLLM("huggingface")}
+          type="button"
+          title="Hugging Face"
+          style={{ marginLeft: 8 }}
+        >
+          <img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="Hugging Face" width={24} height={24} />
+          Hugging Face
+        </button>
       </div>
 
       {/* Start Assistant Button */}
@@ -287,15 +331,23 @@ function App() {
           </svg>
         </button>
         <div className="carousel-list" ref={carouselRef}>
-          {logEmails.slice(0, visibleCount).map((em, idx) => (
+          {logEmails.slice(0, visibleCount).map((em) => (
             <div
               key={em.id}
-              className="carousel-item"
-              style={{ "--i": idx }}
+              className={`carousel-item${processingId === em.id ? " processing" : ""}`}
+              style={{
+                opacity: processingId === em.id ? 0.5 : 1,
+                transition: "opacity 0.6s"
+              }}
             >
               <div className="carousel-from">{em.from}</div>
               <div className="carousel-date">{em.date}</div>
               <div className="carousel-subject">{em.subject}</div>
+              {processingId === em.id && (
+                <div className="processing-overlay">
+                  <div className="processing-text">Processing...</div>
+                </div>
+              )}
             </div>
           ))}
         </div>

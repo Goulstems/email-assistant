@@ -20,12 +20,18 @@ console.log('REDIRECT_URI:', REDIRECT_URI);
 // Store user tokens securely (for demo, in-memory)
 let oauth2Tokens = null;
 
+const SCOPES = [
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/gmail.modify",
+  "https://www.googleapis.com/auth/gmail.compose"
+];
+
 // Step 1: Redirect user to Google's OAuth consent screen
 app.get('/api/auth/google', (req, res) => {
   const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: ['https://www.googleapis.com/auth/gmail.readonly'],
+    scope: SCOPES,
     prompt: 'consent'
   });
   res.redirect(url);
@@ -125,10 +131,81 @@ app.post('/api/llm/reply', async (req, res) => {
   }
 });
 
+// Add to your backend (server.js)
+const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
+
+app.post('/api/llm/reply-hf', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const prompt = `Reply to this email:\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body || ''}`;
+    const response = await axios.post(
+      "https://api-inference.huggingface.co/models/gpt2",
+      { inputs: prompt },
+      {
+        headers: {
+          "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    res.json({
+      subject: "Re: " + email.subject,
+      body: response.data[0]?.generated_text?.trim() || "(No response)"
+    });
+  } catch (err) {
+    console.error("Hugging Face error:", err.response?.data || err.message, err.response?.status || '');
+    res.status(500).json({ error: err.response?.data?.error || err.message });
+  }
+});
+
 app.post('/api/llm', (req, res) => {
   const { prompt, llm, email } = req.body;
   // Simulate LLM response
   res.json({ response: `Draft reply for: "${prompt}" (LLM: ${llm})` });
+});
+
+app.post('/api/gmail/draft-and-mark-read', async (req, res) => {
+  const { emailId, reply, subject } = req.body;
+  if (!oauth2Tokens) return res.status(401).json({ error: 'Not authenticated' });
+
+  const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+  oauth2Client.setCredentials(oauth2Tokens);
+  const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+  try {
+    // Get the original message to reply to
+    const msgData = await gmail.users.messages.get({ userId: 'me', id: emailId, format: 'full' });
+    const threadId = msgData.data.threadId;
+    const from = msgData.data.payload.headers.find(h => h.name === "From")?.value;
+
+    // Create MIME message
+    const rawMessage = Buffer.from(
+      `From: me\r\nTo: ${from}\r\nSubject: ${subject}\r\nIn-Reply-To: ${emailId}\r\nReferences: ${emailId}\r\n\r\n${reply}`
+    ).toString("base64").replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    // Create draft
+    await gmail.users.drafts.create({
+      userId: 'me',
+      requestBody: {
+        message: {
+          raw: rawMessage,
+          threadId
+        }
+      }
+    });
+
+    // Mark as read
+    await gmail.users.messages.modify({
+      userId: 'me',
+      id: emailId,
+      requestBody: { removeLabelIds: ['UNREAD'] }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Draft/mark as read error:", err.response?.data || err.message);
+    res.status(500).json({ error: err.response?.data?.error || err.message });
+  }
 });
 
 const PORT = process.env.PORT || 4000;
