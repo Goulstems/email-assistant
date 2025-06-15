@@ -58,10 +58,21 @@
 .carousel-container {
   width: 100%;
   overflow-x: auto;
+  background: transparent; /* let .carousel-bg show through */
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.carousel-bg {
   background: #f8f8f8;
   border-radius: 12px;
-  margin-bottom: 16px;
-  padding: 8px 0;
+  padding: 16px 0;      /* vertical padding only */
+  overflow: hidden;     /* ensures nothing escapes */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .carousel-arrow {
@@ -84,12 +95,15 @@
   flex-wrap: nowrap;
   gap: 16px;
   scroll-behavior: smooth;
+  width: max-content;
+  min-height: 180px;
+  align-items: stretch;
 }
 
 .carousel-item {
   min-width: 260px;
   max-width: 320px;
-  width: 90%;
+  width: 20%;
   box-sizing: border-box;
   padding: 16px;
   border: 1px solid #ccc;
