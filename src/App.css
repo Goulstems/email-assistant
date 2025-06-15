@@ -56,9 +56,12 @@
 
 /* Carousel */
 .carousel-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 18px;
+  width: 100%;
+  overflow-x: auto;
+  background: #f8f8f8;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  padding: 8px 0;
 }
 
 .carousel-arrow {
@@ -77,24 +80,24 @@
 
 .carousel-list {
   display: flex;
-  overflow-x: auto;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
   scroll-behavior: smooth;
-  gap: 12px;
-  padding: 8px 0;
-  flex: 1;
 }
 
 .carousel-item {
-  min-width: 150px;
-  background: #f3f3f3;
+  min-width: 260px;
+  max-width: 320px;
+  width: 90%;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 12px 14px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  background: #fff;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  opacity: 0;
-  animation: fadeIn 0.4s forwards;
 }
 .carousel-item.selected {
   border: 1px solid #f3ede7;   /* Remove highlight for selected */
