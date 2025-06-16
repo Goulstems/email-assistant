@@ -1,0 +1,118 @@
+/* Carousel */
+.carousel-container {
+  width: 100%;
+  overflow-x: auto;
+  background: transparent; /* let .carousel-bg show through */
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.carousel-bg {
+  background: #f8f8f8;
+  border-radius: 12px;
+  padding: 16px 0;      /* vertical padding only */
+  overflow: hidden;     /* ensures nothing escapes */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.carousel-arrow {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: opacity 0.2s;
+  opacity: 0.8;
+}
+
+.carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.carousel-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  scroll-behavior: smooth;
+  width: max-content;
+  min-height: 180px;
+  align-items: stretch;
+}
+
+.carousel-item {
+  min-width: 260px;
+  max-width: 320px;
+  width: 10%;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.carousel-item.selected {
+  border: 1px solid #f3ede7;   /* Remove highlight for selected */
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(255, 140, 0, 0.03);
+}
+.carousel-item.processing {
+  position: relative;
+}
+.processing-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 136, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  border-radius: 12px;
+  animation: fadeIn 0.3s;
+}
+.processing-text {
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-shadow: 0 2px 8px #ff8800;
+}
+.carousel-item:nth-child(n) {
+  animation-delay: calc(0.08s * var(--i));
+}
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+/* Example for a card or text container */
+.carousel-item,
+.carousel-from,
+.carousel-date,
+.carousel-subject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Optionally, set a max-width or width */
+  max-width: 100%;
+  display: block;
+}
+.carousel-from {
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #009688;
+}
+.carousel-date {
+  font-size: 0.95em;
+  color: #888;
+  margin-bottom: 4px;
+}
+.carousel-subject {
+  font-size: 1em;
+  color: #333;
+}

@@ -23,11 +23,13 @@ function App() {
   const [selectedLLM, setSelectedLLM] = useState("chatgpt");
   const [showLLMModal, setShowLLMModal] = useState(false);
   const [customLLM, setCustomLLM] = useState({
-    name: "",
-    endpoint: "",
-    apiKey: ""
+    name: "OpenRouter",
+    endpoint: "https://openrouter.ai/api/v1/chat/completions",
+    apiKey: "",
+    model: "openchat/openchat-3.5-0106"
   });
   const [processingId, setProcessingId] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const assistantActiveRef = useRef(assistantActive);
 
   // Keep ref in sync with state
@@ -37,16 +39,16 @@ function App() {
 
   // Fetch unread emails from backend
   const fetchUnreadEmails = async () => {
-    console.log("Fetching unread emails...");
+    setIsRefreshing(true);
     try {
       const res = await fetch('http://localhost:4000/api/gmail/unread');
       if (!res.ok) throw new Error('Not authenticated or error fetching emails');
       const emails = await res.json();
-      console.log("Fetched emails:", emails);
       setLogEmails(emails);
     } catch (err) {
       setLogEmails([]);
     }
+    setIsRefreshing(false);
   };
 
   const handleLogin = () => {
@@ -82,24 +84,45 @@ function App() {
       const email = emailsToProcess[i];
       setProcessingId(email.id);
 
+      // --- LLM Selection Logic ---
       let endpoint = "/api/llm/reply";
-      if (selectedLLM === "huggingface") endpoint = "/api/llm/reply-hf";
+      let fetchOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      };
+
+      if (selectedLLM === "huggingface") {
+        endpoint = "/api/llm/reply-hf";
+      } else if (selectedLLM === "other") {
+        endpoint = "/api/llm/custom";
+        fetchOptions.body = JSON.stringify({
+          ...customLLM,
+          prompt: `Reply to this email:\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body || ''}`
+        });
+      }
 
       try {
-        const res = await fetch(`http://localhost:4000${endpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
+        const res = await fetch(`http://localhost:4000${endpoint}`, fetchOptions);
         const data = await res.json();
+
+        if (!res.ok || !data.body && !data.response || data.error) {
+          setStatus("LLM failed to generate a response. Please try again or check your LLM settings.");
+          setProcessingId(null);
+          return;
+        }
+
+        // Support both .body (OpenAI/HF) and .response (custom)
+        const replyBody = data.body || data.response;
+        const replySubject = data.subject || `Re: ${email.subject}`;
 
         await fetch('http://localhost:4000/api/gmail/draft-and-mark-read', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             emailId: email.id,
-            reply: data.body,
-            subject: data.subject
+            reply: replyBody,
+            subject: replySubject
           })
         });
 
@@ -156,7 +179,6 @@ function App() {
   // Always show all loaded emails, no animation
   useEffect(() => {
     setVisibleCount(logEmails.length);
-    console.log("visibleCount set to:", logEmails.length);
   }, [logEmails]);
 
   // Check for ?authed=1 in the URL
@@ -173,10 +195,6 @@ function App() {
       fetchUnreadEmails();
     }
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    console.log("logEmails updated:", logEmails);
-  }, [logEmails]);
 
   // --- CONDITIONAL RENDERING ---
   if (!isAuthenticated) {
@@ -214,7 +232,40 @@ function App() {
         </button>
       </div>
 
-      <div className="log-label">Recently Unread</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
+  <div className="log-label" style={{ lineHeight: "20px" }}>Recently Unread</div>
+  <button
+    className={`refresh-btn${isRefreshing ? " spinning" : ""}`}
+    onClick={fetchUnreadEmails}
+    title="Refresh"
+    disabled={isRefreshing}
+    style={{
+      background: "none",
+      border: "none",
+      cursor: isRefreshing ? "wait" : "pointer",
+      padding: 0,
+      display: "flex",
+      alignItems: "center",
+      height: "35px", // smaller height
+      marginTop: "1px" // lower the button
+    }}
+  >
+    <svg
+      className="refresh-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      style={{ display: "block" }}
+    >
+      <g>
+        <path
+          d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.13-.31 2.18-.85 3.07l1.46 1.46A7.938 7.938 0 0020 12c0-4.42-3.58-8-8-8zm-6.85 2.93L3.69 7.39A7.938 7.938 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3c-3.31 0-6-2.69-6-6 0-1.13.31-2.18.85-3.07z"
+          fill="#1976d2"
+        />
+      </g>
+    </svg>
+  </button>
+</div>
       <EmailCarousel
         logEmails={logEmails}
         visibleCount={visibleCount}
@@ -232,9 +283,12 @@ function App() {
 
       {showLLMModal && (
         <LLMModal
-          customLLM={customLLM}
-          setCustomLLM={setCustomLLM}
-          setShowLLMModal={setShowLLMModal}
+          onClose={() => setShowLLMModal(false)}
+          onSave={llmConfig => {
+            setCustomLLM(llmConfig);
+            setShowLLMModal(false);
+            setSelectedLLM("other");
+          }}
         />
       )}
     </div>

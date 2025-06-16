@@ -1,4 +1,5 @@
 import React from "react";
+import "./styles/EmailCarousel.css";
 
 export default function EmailCarousel({
   logEmails,

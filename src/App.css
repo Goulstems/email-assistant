@@ -54,125 +54,6 @@
   font-weight: 600;
 }
 
-/* Carousel */
-.carousel-container {
-  width: 100%;
-  overflow-x: auto;
-  background: transparent; /* let .carousel-bg show through */
-  border-radius: 0;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  position: relative;
-}
-
-.carousel-bg {
-  background: #f8f8f8;
-  border-radius: 12px;
-  padding: 16px 0;      /* vertical padding only */
-  overflow: hidden;     /* ensures nothing escapes */
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.carousel-arrow {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0 8px;
-  transition: opacity 0.2s;
-  opacity: 0.8;
-}
-
-.carousel-arrow:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.carousel-list {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: 16px;
-  scroll-behavior: smooth;
-  width: max-content;
-  min-height: 180px;
-  align-items: stretch;
-}
-
-.carousel-item {
-  min-width: 260px;
-  max-width: 320px;
-  width: 20%;
-  box-sizing: border-box;
-  padding: 16px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-}
-.carousel-item.selected {
-  border: 1px solid #f3ede7;   /* Remove highlight for selected */
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(255, 140, 0, 0.03);
-}
-.carousel-item.processing {
-  position: relative;
-}
-.processing-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 136, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  border-radius: 12px;
-  animation: fadeIn 0.3s;
-}
-.processing-text {
-  color: #fff;
-  font-size: 1.2em;
-  font-weight: bold;
-  text-shadow: 0 2px 8px #ff8800;
-}
-.carousel-item:nth-child(n) {
-  animation-delay: calc(0.08s * var(--i));
-}
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}
-/* Example for a card or text container */
-.carousel-item,
-.carousel-from,
-.carousel-date,
-.carousel-subject {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  /* Optionally, set a max-width or width */
-  max-width: 100%;
-  display: block;
-}
-.carousel-from {
-  font-weight: bold;
-  margin-bottom: 4px;
-  color: #009688;
-}
-.carousel-date {
-  font-size: 0.95em;
-  color: #888;
-  margin-bottom: 4px;
-}
-.carousel-subject {
-  font-size: 1em;
-  color: #333;
-}
-
 /* Tabs */
 .tabs {
   display: flex;
@@ -333,6 +214,15 @@
 }
 
 .status-text {
+  font-weight: bold;
+}
+
+.status-error {
+  color: #e53935;
+  background: #fff3f3;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
   font-weight: bold;
 }
 
@@ -673,101 +563,33 @@
   pointer-events: all;
 }
 
-/* LLM Selector */
-.llm-selector {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-  gap: 8px;
-}
-.llm-btn {
-  border: 1px solid #ccc;
-  background: #fff;
-  padding: 4px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 1em;
-  transition: border 0.2s, background 0.2s;
-}
-.llm-btn.selected, .llm-btn:hover {
-  border: 2px solid #1db954;
-  background: #f0fff5;
+/* Refresh Button Animation */
+.refresh-btn.spinning .refresh-icon {
+  animation: spin 0.7s linear infinite;
 }
 
-/* LLM Modal */
-.llm-modal-backdrop {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(30, 30, 30, 0.18); /* softer overlay */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }
-.llm-modal {
-  background: #fff8f2; /* match app's soft white/orange background */
-  padding: 28px 36px;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(255,140,0,0.10), 0 2px 8px rgba(60,60,120,0.06);
-  min-width: 340px;
-  max-width: 95vw;
-}
-.llm-modal h3 {
-  border-bottom: 1px solid #ffe0c2;
-  padding-bottom: 8px;
-  margin-bottom: 18px;
-}
-.llm-modal label {
-  display: block;
-  margin: 12px 0 4px 0;
-  font-weight: 500;
-  color: #232946;
-}
-.llm-modal input {
-  width: 100%;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-  border: 1.5px solid #f3ede7;
-  border-radius: 6px;
-  background: #fff;
-  color: #222;
-  font-size: 1em;
-  transition: border 0.18s;
-}
-.llm-modal input:focus {
-  border: 1.5px solid #ff8800;
-  outline: none;
-}
-.llm-modal button {
-  min-width: 90px;
-  background: #ff8800;
+
+/* If your button has a class, e.g., .start-assistant-btn */
+.start-assistant-btn {
+  background: #b47b4b;
   color: #fff;
   border: none;
-  border-radius: 6px;
-  padding: 8px 18px;
-  font-size: 1em;
+  border-radius: 8px;
+  padding: 14px 32px;
+  font-size: 1.1em;
+  font-weight: bold;
   cursor: pointer;
-  font-weight: 500;
-  margin-top: 8px;
-  transition: background 0.18s;
-}
-.llm-modal button:hover {
-  background: #e67300;
-}
-.llm-modal .modal-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 12px;
-  justify-content: flex-end;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(180, 123, 75, 0.08);
 }
 
-@media (max-width: 500px) {
-  .llm-modal {
-    padding: 16px 8px;
-    min-width: unset;
-    width: 98vw;
-  }
+.start-assistant-btn:hover:not(:disabled) {
+  background: #a05f2c;
+  box-shadow: 0 4px 16px rgba(180, 123, 75, 0.18);
+  transform: translateY(-2px) scale(1.03);
 }

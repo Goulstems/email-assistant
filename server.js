@@ -131,26 +131,28 @@ app.post('/api/llm/reply', async (req, res) => {
   }
 });
 
-// Add to your backend (server.js)
-const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
-
+// Example for Hugging Face
 app.post('/api/llm/reply-hf', async (req, res) => {
   const { email } = req.body;
   try {
     const prompt = `Reply to this email:\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body || ''}`;
     const response = await axios.post(
-      "https://api-inference.huggingface.co/models/gpt2",
+      "https://api-inference.huggingface.co/models/distilgpt2",
       { inputs: prompt },
       {
         headers: {
-          "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
           "Content-Type": "application/json"
         }
       }
     );
+    const generated = response.data[0]?.generated_text?.trim();
+    if (!generated) {
+      return res.status(502).json({ error: "LLM did not return a valid response." });
+    }
     res.json({
       subject: "Re: " + email.subject,
-      body: response.data[0]?.generated_text?.trim() || "(No response)"
+      body: generated
     });
   } catch (err) {
     console.error("Hugging Face error:", err.response?.data || err.message, err.response?.status || '');
@@ -204,6 +206,33 @@ app.post('/api/gmail/draft-and-mark-read', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("Draft/mark as read error:", err.response?.data || err.message);
+    res.status(500).json({ error: err.response?.data?.error || err.message });
+  }
+});
+
+app.post('/api/llm/custom', async (req, res) => {
+  const { name, prompt, apiKey, endpoint, model } = req.body;
+
+  console.log("Using custom LLM: ", { name, endpoint, model });
+
+  try {
+    const response = await axios.post(
+      endpoint, // Use the endpoint provided by the user
+      {
+        model: model || "openchat/openchat-3.5-0106",
+        messages: [{ role: "user", content: prompt }]
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    res.json({
+      response: response.data.choices?.[0]?.message?.content?.trim() || "(No response)"
+    });
+  } catch (err) {
     res.status(500).json({ error: err.response?.data?.error || err.message });
   }
 });

@@ -1,6 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
+import "./styles/LLMModal.css";
 
-export default function LLMModal({ customLLM, setCustomLLM, setShowLLMModal }) {
+export default function LLMModal({ onClose }) {
+  // Set default values here:
+  const [name, setName] = useState("OpenRouter");
+  const [endpoint, setEndpoint] = useState(
+    "https://openrouter.ai/api/v1/chat/completions"
+  );
+  const [apiKey, setApiKey] = useState(""); // Leave blank for user to fill
+  const [model, setModel] = useState("openchat/openchat-3.5-0106");
+  const [prompt, setPrompt] = useState("Say hello to the world!");
+  const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
+
   return (
     <div className="llm-modal-backdrop">
       <div className="llm-modal">
@@ -9,32 +21,34 @@ export default function LLMModal({ customLLM, setCustomLLM, setShowLLMModal }) {
           Name:
           <input
             type="text"
-            value={customLLM.name}
-            onChange={e => setCustomLLM({ ...customLLM, name: e.target.value })}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </label>
         <label>
           API Endpoint:
           <input
             type="text"
-            value={customLLM.endpoint}
-            onChange={e => setCustomLLM({ ...customLLM, endpoint: e.target.value })}
+            value={endpoint}
+            onChange={(e) => setEndpoint(e.target.value)}
           />
         </label>
         <label>
           API Key:
           <input
             type="text"
-            value={customLLM.apiKey}
-            onChange={e => setCustomLLM({ ...customLLM, apiKey: e.target.value })}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
           />
         </label>
         <div style={{ marginTop: 12 }}>
           <button
-            onClick={() => setShowLLMModal(false)}
+            onClick={() => onClose()}
             style={{ marginRight: 8 }}
-          >Save</button>
-          <button onClick={() => setShowLLMModal(false)}>Cancel</button>
+          >
+            Save
+          </button>
+          <button onClick={() => onClose()}>Cancel</button>
         </div>
       </div>
     </div>

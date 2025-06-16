@@ -1,4 +1,5 @@
 import React from "react";
+// import "./styles/LLMSelector.css";
 
 export default function LLMSelector({ selectedLLM, setSelectedLLM, setShowLLMModal, assistantActive }) {
   return (
@@ -26,16 +27,6 @@ export default function LLMSelector({ selectedLLM, setSelectedLLM, setShowLLMMod
       >
         <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4a1.png" alt="Other LLM" width={24} height={24} />
         Other
-      </button>
-      <button
-        className={`llm-btn${selectedLLM === "huggingface" ? " selected" : ""}`}
-        onClick={() => setSelectedLLM("huggingface")}
-        type="button"
-        title="Hugging Face"
-        style={{ marginLeft: 8 }}
-      >
-        <img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="Hugging Face" width={24} height={24} />
-        Hugging Face
       </button>
     </div>
   );
