@@ -96,11 +96,19 @@ function App() {
       setProcessingId(email.id);
 
       // --- LLM Selection Logic ---
+      const userInfo = responseInput?.customText
+        ? `Reply to this email as if you are the following person:\n${responseInput.customText}\n\n`
+        : "";
+
+      const prompt =
+        userInfo +
+        `From: ${email.from}\nSubject: ${email.subject}\n\n${email.body || ''}\n\nYour reply should be signed with your name.`;
+
       let endpoint = "/api/llm/reply";
       let fetchOptions = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ prompt, email })
       };
 
       if (selectedLLM === "huggingface") {

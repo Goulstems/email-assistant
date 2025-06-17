@@ -100,9 +100,9 @@ app.get('/api/gmail/unread', async (req, res) => {
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 app.post('/api/llm/reply', async (req, res) => {
-  const { email } = req.body;
+  // Use the prompt sent from the frontend!
+  const { prompt, email } = req.body;
   try {
-    const prompt = `Reply to this email:\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body || ''}`;
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -122,41 +122,12 @@ app.post('/api/llm/reply', async (req, res) => {
       }
     );
     res.json({
-      subject: "Re: " + email.subject,
+      subject: "Re: " + (email?.subject || ""),
       body: response.data.choices[0].message.content.trim()
     });
   } catch (err) {
     console.error("OpenAI error:", err.response?.data || err.message, err.response?.status || '');
     res.status(500).json({ error: err.response?.data?.error?.message || err.message });
-  }
-});
-
-// Example for Hugging Face
-app.post('/api/llm/reply-hf', async (req, res) => {
-  const { email } = req.body;
-  try {
-    const prompt = `Reply to this email:\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body || ''}`;
-    const response = await axios.post(
-      "https://api-inference.huggingface.co/models/distilgpt2",
-      { inputs: prompt },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-    const generated = response.data[0]?.generated_text?.trim();
-    if (!generated) {
-      return res.status(502).json({ error: "LLM did not return a valid response." });
-    }
-    res.json({
-      subject: "Re: " + email.subject,
-      body: generated
-    });
-  } catch (err) {
-    console.error("Hugging Face error:", err.response?.data || err.message, err.response?.status || '');
-    res.status(500).json({ error: err.response?.data?.error || err.message });
   }
 });
 
