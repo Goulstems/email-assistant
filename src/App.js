@@ -5,6 +5,7 @@ import StatusBar from "./components/StatusBar";
 import EmailCarousel from "./components/EmailCarousel";
 import LLMModal from "./components/LLMModal";
 import LoginScreen from "./components/LoginScreen";
+import ResponseInputModal from "./components/ResponseInputModal";
 
 const STATUSES = [
   "Inactive",
@@ -30,7 +31,14 @@ function App() {
   });
   const [processingId, setProcessingId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [mode, setMode] = useState("all"); // "all" or "selected"
   const assistantActiveRef = useRef(assistantActive);
+  const pollTimeoutRef = useRef(null);
+  const [showResponseInputModal, setShowResponseInputModal] = useState(false);
+  const [responseInput, setResponseInput] = useState({
+    userName: "",
+    customText: ""
+  });
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -61,25 +69,28 @@ function App() {
     setLogEmails([]);
     setVisibleCount(0);
     setIsAuthenticated(false);
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
   };
 
-  // --- MAIN LOGIC: Start/Stop Assistant ---
-  const handleStart = async () => {
-    if (assistantActive) {
-      setAssistantActive(false);
-      setStatus("Inactive");
-      return;
+  const processEmails = async () => {
+    if (!assistantActiveRef.current) return;
+
+    let emailsToProcess = [];
+    try {
+      const res = await fetch('http://localhost:4000/api/gmail/unread');
+      if (res.ok) {
+        emailsToProcess = await res.json();
+        setLogEmails(emailsToProcess);
+      }
+    } catch (err) {
+      setLogEmails([]);
     }
 
-    setAssistantActive(true);
-    setStatus("Active");
-
-    // Let React update the UI before starting the loop!
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    let emailsToProcess = [...logEmails];
     for (let i = 0; i < emailsToProcess.length; i++) {
-      if (!assistantActiveRef.current) break;
+      if (!assistantActiveRef.current) return;
 
       const email = emailsToProcess[i];
       setProcessingId(email.id);
@@ -98,7 +109,16 @@ function App() {
         endpoint = "/api/llm/custom";
         fetchOptions.body = JSON.stringify({
           ...customLLM,
-          prompt: `Reply to this email:\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body || ''}`
+          prompt
+        });
+      } else if (selectedLLM === "chatgpt") {
+        endpoint = "/api/llm/reply";
+        fetchOptions.body = JSON.stringify({ prompt, email });
+      } else {
+        // For OpenAI/HuggingFace, you can also add responseInput if you want:
+        fetchOptions.body = JSON.stringify({
+          email,
+          ...(responseInput?.customText && { responseInput: responseInput.customText })
         });
       }
 
@@ -106,13 +126,12 @@ function App() {
         const res = await fetch(`http://localhost:4000${endpoint}`, fetchOptions);
         const data = await res.json();
 
-        if (!res.ok || !data.body && !data.response || data.error) {
+        if (!res.ok || (!data.body && !data.response) || data.error) {
           setStatus("LLM failed to generate a response. Please try again or check your LLM settings.");
           setProcessingId(null);
           return;
         }
 
-        // Support both .body (OpenAI/HF) and .response (custom)
         const replyBody = data.body || data.response;
         const replySubject = data.subject || `Re: ${email.subject}`;
 
@@ -136,9 +155,31 @@ function App() {
       setProcessingId(null);
     }
 
-    setProcessingId(null);
-    setAssistantActive(false);
-    setStatus("Inactive");
+    // Schedule next poll if still active
+    if (assistantActiveRef.current) {
+      pollTimeoutRef.current = setTimeout(processEmails, 10000);
+    } else {
+      setProcessingId(null);
+      setAssistantActive(false);
+      setStatus("Inactive");
+    }
+  };
+
+  // --- MAIN LOGIC: Start/Stop Assistant ---
+  const handleStart = () => {
+    if (assistantActive) {
+      setAssistantActive(false);
+      setStatus("Inactive");
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
+      }
+      return;
+    }
+    setAssistantActive(true);
+    setStatus("Active");
+    assistantActiveRef.current = true; // <--- Add this line
+    processEmails();
   };
 
   const startScroll = (direction) => {
@@ -196,6 +237,13 @@ function App() {
     }
   }, [isAuthenticated]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    };
+  }, []);
+
   // --- CONDITIONAL RENDERING ---
   if (!isAuthenticated) {
     return <LoginScreen handleLogin={handleLogin} />;
@@ -220,6 +268,8 @@ function App() {
         setSelectedLLM={setSelectedLLM}
         setShowLLMModal={setShowLLMModal}
         assistantActive={assistantActive}
+        setShowResponseInputModal={setShowResponseInputModal}
+        hasResponseInput={!!responseInput?.customText}
       />
 
       <div className="start-row">
@@ -232,40 +282,73 @@ function App() {
         </button>
       </div>
 
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-  <div className="log-label" style={{ lineHeight: "20px" }}>Recently Unread</div>
-  <button
-    className={`refresh-btn${isRefreshing ? " spinning" : ""}`}
-    onClick={fetchUnreadEmails}
-    title="Refresh"
-    disabled={isRefreshing}
+      <div style={{ position: "relative", width: "100%" }}>
+  {/* Mode Toggle - absolutely positioned */}
+  <div
     style={{
-      background: "none",
-      border: "none",
-      cursor: isRefreshing ? "wait" : "pointer",
-      padding: 0,
+      position: "absolute",
+      left: "50%",
+      transform: "translateX(-50%)",
+      top: 0,
       display: "flex",
       alignItems: "center",
-      height: "35px", // smaller height
-      marginTop: "1px" // lower the button
+      zIndex: 2
     }}
   >
-    <svg
-      className="refresh-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      style={{ display: "block" }}
+    {/* TODO: all vs selected mode..? */}
+    {/* <span style={{ fontWeight: "bold", marginRight: 8 }}>Mode:</span>
+    <button
+      className={`mode-btn${mode === "all" ? " selected" : ""}`}
+      onClick={() => setMode("all")}
+      style={{ marginRight: 4 }}
     >
-      <g>
-        <path
-          d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.13-.31 2.18-.85 3.07l1.46 1.46A7.938 7.938 0 0020 12c0-4.42-3.58-8-8-8zm-6.85 2.93L3.69 7.39A7.938 7.938 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3c-3.31 0-6-2.69-6-6 0-1.13.31-2.18.85-3.07z"
-          fill="#1976d2"
-        />
-      </g>
-    </svg>
-  </button>
+      All
+    </button>
+    <button
+      className={`mode-btn${mode === "selected" ? " selected selected-btn" : ""}`}
+      onClick={() => setMode("selected")}
+    >
+      Selected
+    </button> */}
+  </div>
+
+  {/* Recently Unread row */}
+  <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginTop: 36 }}>
+    <div className="log-label" style={{ lineHeight: "20px" }}>Recently Unread</div>
+    <button
+      className={`refresh-btn${isRefreshing ? " spinning" : ""}`}
+      onClick={fetchUnreadEmails}
+      title="Refresh"
+      disabled={isRefreshing}
+      style={{
+        background: "none",
+        border: "none",
+        cursor: isRefreshing ? "wait" : "pointer",
+        padding: 0,
+        display: "flex",
+        alignItems: "center",
+        height: "35px", // smaller height
+        marginTop: "1px" // lower the button
+      }}
+    >
+      <svg
+        className="refresh-icon"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        style={{ display: "block" }}
+      >
+        <g>
+          <path
+            d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.13-.31 2.18-.85 3.07l1.46 1.46A7.938 7.938 0 0020 12c0-4.42-3.58-8-8-8zm-6.85 2.93L3.69 7.39A7.938 7.938 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3c-3.31 0-6-2.69-6-6 0-1.13.31-2.18.85-3.07z"
+            fill="#1976d2"
+          />
+        </g>
+      </svg>
+    </button>
+  </div>
 </div>
+
       <EmailCarousel
         logEmails={logEmails}
         visibleCount={visibleCount}
@@ -289,6 +372,14 @@ function App() {
             setShowLLMModal(false);
             setSelectedLLM("other");
           }}
+        />
+      )}
+
+      {showResponseInputModal && (
+        <ResponseInputModal
+          onClose={() => setShowResponseInputModal(false)}
+          responseInput={responseInput}
+          setResponseInput={setResponseInput}
         />
       )}
     </div>
