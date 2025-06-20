@@ -59,7 +59,7 @@ function App() {
     setIsRefreshing(false);
   };
 
-  const handleLogin = () => {
+  const handleGMailLogin = () => {
     window.location.href = "http://localhost:4000/api/auth/google";
   };
 
@@ -254,7 +254,13 @@ function App() {
 
   // --- CONDITIONAL RENDERING ---
   if (!isAuthenticated) {
-    return <LoginScreen handleLogin={handleLogin} />;
+    let loginSelectionList = {
+      handleGMailLogin: handleGMailLogin,
+      handleImapLogin: () => {
+        alert("IMAP/SMTP login is not implemented yet. Please use Google login.");
+      }
+    }
+    return <LoginScreen loginSelectionList={loginSelectionList} />;
   }
 
   return (
